@@ -1,5 +1,5 @@
 [package]
-name = "git_pull_approve"
+name = "gitty"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,5 +7,13 @@ edition = "2021"
 
 [dependencies]
 gix = "0.44.1"
-dialoguer = "0.11.0"
+ureq = "2.7.1"
+#dialoguer = "0.11.0"
+inquire="0.6.2"
+serde = {version="1.0.188", features=["derive"]}
+serde_json = "1.0.107"
 
+
+[dev-dependencies]
+dotenv="0.15.0"
+serial_test = "2.0.0"
