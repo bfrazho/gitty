@@ -79,12 +79,7 @@ fn panic_if_list_contains_unknown_option(result: &Vec<String>, options: &Vec<Str
 #[cfg(test)]
 mod test {
 
-    use crate::user_input_generator::{UserInputGeneratorTrait, testing::MockUserInputGenerator};
-
-
-
-
-    
+    use crate::user_input_generator::{UserInputGeneratorTrait, testing::MockUserInputGenerator};    
 
     #[test]
     fn can_get_text_inputs() {
