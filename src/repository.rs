@@ -31,6 +31,29 @@ pub fn get_repository_url() -> Url {
         .to_owned()
 }
 
+pub struct GitRepository {
+    token: String,
+    url: Url
+}
+
+impl GitRepository{
+    pub fn new(token: String, url: Url)-> Self {
+        Self{token, url}
+    }
+    pub fn get_token(&self)-> &str{
+        return &self.token
+    }
+    pub fn get_org_name(&self)-> String{
+        return self.url.get_org_name()
+    }
+    pub fn get_repository_name(&self)-> String{
+        return self.url.get_repository_name()
+    }
+    pub fn get_base_git_url(&self)-> &str{
+        return self.url.host().unwrap()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -60,5 +83,17 @@ mod test {
             "git@github.com:bfrazho/gitty.git".to_string(),
             get_repository_url().to_bstring()
         )
+    }
+
+    #[test]
+    fn can_create_git_repository() {
+        let repository = GitRepository::new(
+            "the token".to_string(), 
+        Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+
+        assert_eq!("the token", repository.get_token());
+        assert_eq!("bfrazho".to_string(), repository.get_org_name());
+        assert_eq!("github.com", repository.get_base_git_url());
+        assert_eq!("gitty", repository.get_repository_name());
     }
 }

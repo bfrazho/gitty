@@ -1,8 +1,6 @@
-use gix::Url;
 use serde::{Serialize, Deserialize};
 
-use crate::{repository::RepositoryTrait, user_input_generator::UserInputGeneratorTrait};
-
+use crate::{repository::GitRepository, user_input_generator::UserInputGeneratorTrait};
 
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct Collaborator {
@@ -14,26 +12,29 @@ impl Collaborator {
         self.login.clone()
     }
 }
-
-//https://docs.github.com/en/rest/collaborators/collaborators?apiVersion=2022-11-28
-pub fn get_collaborators(url: Url, github_token: String) -> Vec<Collaborator> {
-    let bearer_token = format!("Bearer {}", github_token);
-    let url = format!(
-        "https://api.{}/repos/{}/{}/collaborators",
-        url.host().unwrap(),
-        url.get_org_name(),
-        url.get_repository_name()
-    );
-    match ureq::get(&url)
-    .set("Authorization",&bearer_token)
-    .set("X-GitHub-Api-Version", "2022-11-28")
-    .call()
-    {
-        Ok(response) => serde_json::from_str::<Vec<Collaborator>>(&response.into_string().unwrap())
-            .expect("failed to deserialize"),
-        Err(error) => panic!("{}", error),
+impl GitRepository {
+    //https://docs.github.com/en/rest/collaborators/collaborators?apiVersion=2022-11-28
+    pub fn get_collaborators(&self) -> Vec<Collaborator> {
+        let bearer_token = format!("Bearer {}", self.get_token());
+        let url = format!(
+            "https://api.{}/repos/{}/{}/collaborators",
+            self.get_base_git_url(),
+            self.get_org_name(),
+            self.get_repository_name()
+        );
+        match ureq::get(&url)
+        .set("Authorization",&bearer_token)
+        .set("X-GitHub-Api-Version", "2022-11-28")
+        .call()
+        {
+            Ok(response) => serde_json::from_str::<Vec<Collaborator>>(&response.into_string().unwrap())
+                .expect("failed to deserialize"),
+            Err(error) => panic!("{}", error),
+        }
     }
 }
+
+
 
 pub fn ask_who_they_are_working_with(user_input_generator: &mut dyn UserInputGeneratorTrait, collaborators: Vec<Collaborator>)-> Vec<String> {
     let collaborator_names: Vec<String> = collaborators
@@ -65,7 +66,7 @@ mod test{
             vec![Collaborator {
                 login: "bfrazho".to_string()
             }],
-            get_collaborators(Url::try_from("git@github.com:bfrazho/gitty.git").unwrap(), github_token)
+            GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap()).get_collaborators()
         )
     }
 
