@@ -35,8 +35,8 @@ impl GitRepository {
     pub fn get_collaborators(&self) -> Vec<Collaborator> {
         let bearer_token = format!("Bearer {}", self.get_token());
         let url = format!(
-            "https://api.{}/repos/{}/{}/collaborators",
-            self.get_base_git_url(),
+            "{}/repos/{}/{}/collaborators",
+            self.get_base_rest_url(),
             self.get_org_name(),
             self.get_repository_name()
         );

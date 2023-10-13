@@ -47,7 +47,12 @@ impl GitRepository{
         format!("Bearer {}", self.get_token())
     }
     pub fn get_graphql_url(&self)-> String{
-        format!("https://api.{}/graphql",self.get_base_git_url())
+        let base_git_url = self.get_host();
+        if base_git_url == "github.com"{
+            format!("https://api.{}/graphql",base_git_url)
+        } else {
+            format!("https://{}/api/graphql",base_git_url)
+        }
     }
 
     pub fn get_org_name(&self)-> String{
@@ -56,7 +61,16 @@ impl GitRepository{
     pub fn get_repository_name(&self)-> String{
         return self.url.get_repository_name()
     }
-    pub fn get_base_git_url(&self)-> &str{
+
+    pub fn get_base_rest_url(&self)-> String {
+        let host = self.get_host();
+        if host == "github.com" {
+            return format!("https://api.{}", host)
+        } else {
+            return format!("https://{}/api/v3", host)
+        }
+    }
+    pub fn get_host(&self)-> &str{
         return self.url.host().unwrap()
     }
 }
@@ -93,6 +107,38 @@ mod test {
     }
 
     #[test]
+    fn can_get_graphql_url_for_standard_git(){
+        let repository = GitRepository::new(
+            "the token".to_string(), 
+        Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+        assert_eq!("https://api.github.com/graphql", repository.get_graphql_url());
+    }
+
+    #[test]
+    fn can_get_graphql_url_for_enterprise_git(){
+        let repository = GitRepository::new(
+            "the token".to_string(), 
+        Url::try_from("git@github.some-business.com:bfrazho/gitty.git").unwrap());
+        assert_eq!("https://github.some-business.com/api/graphql", repository.get_graphql_url());
+    }
+
+    #[test]
+    fn can_get_rest_url_for_standard_git(){
+        let repository = GitRepository::new(
+            "the token".to_string(), 
+        Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+        assert_eq!("https://api.github.com", repository.get_base_rest_url());
+    }
+
+    #[test]
+    fn can_get_rest_url_for_enterprise_git(){
+        let repository = GitRepository::new(
+            "the token".to_string(), 
+        Url::try_from("git@github.some-business.com:bfrazho/gitty.git").unwrap());
+        assert_eq!("https://github.some-business.com/api/v3", repository.get_base_rest_url());
+    }
+
+    #[test]
     fn can_create_git_repository() {
         let repository = GitRepository::new(
             "the token".to_string(), 
@@ -100,7 +146,7 @@ mod test {
 
         assert_eq!("the token", repository.get_token());
         assert_eq!("bfrazho".to_string(), repository.get_org_name());
-        assert_eq!("github.com", repository.get_base_git_url());
+        assert_eq!("github.com", repository.get_host());
         assert_eq!("gitty", repository.get_repository_name());
     }
 }
