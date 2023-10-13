@@ -1,7 +1,10 @@
 use std::{env::current_exe, fs, path::PathBuf};
 
+use crate::user_input_generator::TextInputGeneratorTrait;
 
-use crate::user_input_generator::UserInputGeneratorTrait;
+
+
+
 
 fn get_github_token_path()-> PathBuf {
     let mut path_to_github_token = current_exe().unwrap().parent().unwrap().to_owned();
@@ -10,7 +13,7 @@ fn get_github_token_path()-> PathBuf {
 }
 
 pub fn get_github_token_and_prompt_if_not_found(
-    user_input_generator: &mut dyn UserInputGeneratorTrait,
+    user_input_generator: &mut dyn TextInputGeneratorTrait,
 ) -> String {
     let path_to_github_token = get_github_token_path();
     match fs::read_to_string(path_to_github_token.clone()) {
@@ -32,7 +35,7 @@ mod test {
 
     use serial_test::serial;
 
-    use crate::{user_input_generator::testing::MockUserInputGenerator, token_retriever::get_github_token_path};
+    use crate::{token_retriever::get_github_token_path, user_input_generator::testing::MockTextInputGenerator};
 
     use super::get_github_token_and_prompt_if_not_found;
 
@@ -44,7 +47,7 @@ mod test {
         fs::remove_file(path_to_github_token.clone()).unwrap_or_default();
 
         let mut user_input_generator =
-            MockUserInputGenerator::new(vec!["github_token".to_string()], Vec::new());
+            MockTextInputGenerator::new(vec!["github_token".to_string()]);
 
 
         let github_token = get_github_token_and_prompt_if_not_found(&mut user_input_generator);
@@ -67,7 +70,7 @@ mod test {
         fs::remove_file(path_to_github_token.clone()).unwrap_or_default();
         fs::write(path_to_github_token.clone(), "existing_github_token").expect("failed to create token");
         let mut user_input_generator =
-            MockUserInputGenerator::new(Vec::new(), Vec::new());
+            MockTextInputGenerator::new(Vec::new());
             
         let github_token = get_github_token_and_prompt_if_not_found(&mut user_input_generator);
 

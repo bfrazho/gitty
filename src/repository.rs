@@ -43,6 +43,13 @@ impl GitRepository{
     pub fn get_token(&self)-> &str{
         return &self.token
     }
+    pub fn get_bearer_token_string(&self)-> String{
+        format!("Bearer {}", self.get_token())
+    }
+    pub fn get_graphql_url(&self)-> String{
+        format!("https://api.{}/graphql",self.get_base_git_url())
+    }
+
     pub fn get_org_name(&self)-> String{
         return self.url.get_org_name()
     }
