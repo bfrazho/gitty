@@ -16,12 +16,8 @@ impl Collaborator {
         Self{node_id, login}
     }
 
-    pub fn get_id(&self)-> String {
-        self.node_id.clone()
-    }
-
-    pub fn get_login(&self)-> String {
-        self.login.clone()
+    pub fn get_id(&self)-> &str {
+        &self.node_id
     }
 }
 impl Display for Collaborator{

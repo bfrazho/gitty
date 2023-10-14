@@ -7,19 +7,14 @@ use crate::{repository::GitRepository, collaborator::Collaborator};
 pub struct User {
     id: Option<String>
 }
-impl User{
-    fn get_id(&self)->Option<String>{
-        self.id.clone()
-    }
-}
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub struct Author {
     user: Option<User>
 }
 impl Author{
-    fn get_user(&self)->Option<User>{
-        self.user.clone()
+    fn get_user(&self)->Option<&User>{
+        self.user.as_ref()
     }
 }
 
@@ -30,14 +25,14 @@ pub struct Commit {
     author: Author
 }
 impl Commit{
-    fn get_author_id(&self)->Option<String>{
+    fn get_author_id(&self)->Option<&String>{
         match self.author.get_user(){
-            Some(user)=>user.id,
+            Some(user)=>user.id.as_ref(),
             None=> None
         }
     }
-    fn get_id(&self)->String{
-        self.oid.clone()
+    fn get_id(&self)->&str{
+        &self.oid
     }
 }
 
@@ -65,9 +60,9 @@ struct History {
 }
 
 fn filter_any_commits_that_do_not_match_collaborators(commits: Vec<Commit>, collaborators: &Vec<Collaborator>)->Vec<Commit>{
-    let collaborator_ids: Vec<String> = collaborators.iter().map(|collaborator| collaborator.get_id()).collect();
+    let collaborator_ids: Vec<&str> = collaborators.iter().map(|collaborator| collaborator.get_id()).collect();
     commits.into_iter()
-        .filter(|commit| commit.get_author_id().is_some() && collaborator_ids.contains(&commit.get_author_id().unwrap()))
+        .filter(|commit| commit.get_author_id().is_some() && collaborator_ids.contains(&commit.get_author_id().as_ref().unwrap().as_str()))
         .collect()
 } 
 
@@ -145,9 +140,6 @@ mod tests{
     impl CommentResponse{
         fn get_id(&self)->u64{
             self.id.clone()
-        }
-        fn get_node_id(&self)->&str{
-            &self.node_id
         }
 
         fn get_body(&self)->&str{
