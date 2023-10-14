@@ -47,11 +47,11 @@ impl GitRepository{
         format!("Bearer {}", self.get_token())
     }
     pub fn get_graphql_url(&self)-> String{
-        let base_git_url = self.get_host();
-        if base_git_url == "github.com"{
-            format!("https://api.{}/graphql",base_git_url)
+        let host = self.get_host();
+        if host == "github.com"{
+            format!("https://api.{}/graphql",host)
         } else {
-            format!("https://{}/api/graphql",base_git_url)
+            format!("https://{}/api/graphql",host)
         }
     }
 

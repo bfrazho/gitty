@@ -25,7 +25,7 @@ impl Author{
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub struct Commit {
-    id: String,
+    oid: String,
     message: String,
     author: Author
 }
@@ -35,6 +35,9 @@ impl Commit{
             Some(user)=>user.id,
             None=> None
         }
+    }
+    fn get_id(&self)->String{
+        self.oid.clone()
     }
 }
 
@@ -79,7 +82,7 @@ impl GitRepository{
                             ... on Commit {{
                                 history(first: 100, since: \"{timestamp}\") {{
                                     nodes {{
-                                        id,
+                                        oid,
                                         message,
                                         author {{
                                             user {{
@@ -113,8 +116,15 @@ impl GitRepository{
         filter_any_commits_that_do_not_match_collaborators(commits, collaborators)
         
     }
-}
 
+    pub fn post_comment_on_commit_that_you_worked_on_it(&self, commit: &Commit){
+        let url = format!("{}/repos/{}/{}/commits/{}/comments", self.get_base_rest_url(), self.get_org_name(), self.get_repository_name(),commit.get_id());
+        ureq::post(&url)
+            .set("Authorization",&self.get_bearer_token_string())
+            .set("X-GitHub-Api-Version", "2022-11-28")
+            .send_string("{\"body\": \"I worked on this\"}").unwrap();
+    }
+}
 
 
 #[cfg(test)]
@@ -125,6 +135,57 @@ mod tests{
     use gix::Url;
 
     use super::*;
+    #[derive(PartialEq, Eq, Debug, Serialize, Deserialize,Clone)]
+    struct CommentResponse{
+        id: u64,
+        node_id: String,
+        body: String
+    }
+
+    impl CommentResponse{
+        fn get_id(&self)->u64{
+            self.id.clone()
+        }
+        fn get_node_id(&self)->&str{
+            &self.node_id
+        }
+
+        fn get_body(&self)->&str{
+            &self.body
+        }
+    }
+
+    impl GitRepository{
+
+        fn get_comments(&self, commit: &Commit)-> Vec<CommentResponse>{
+            let comments_url = format!("{}/repos/{}/{}/commits/{}/comments", self.get_base_rest_url(), self.get_org_name(), self.get_repository_name(), commit.get_id());
+            match ureq::get(&comments_url)
+            .set("Authorization",&self.get_bearer_token_string())
+            .set("X-GitHub-Api-Version", "2022-11-28")
+        .call()
+            {
+                Ok(response) => serde_json::from_str::<Vec<CommentResponse>>(&response.into_string().unwrap())
+                    .expect("failed to deserialize"),
+                Err(error) => panic!("{}", error),
+            }
+        }
+        fn delete_comments(&self, comments: &Vec<CommentResponse>){
+            comments.iter().for_each(|comment| {
+                ureq::delete(
+                    &format!("{}/repos/{}/{}/comments/{}", 
+                    &self.get_base_rest_url(), 
+                    self.get_org_name(), 
+                    self.get_repository_name(), 
+                    comment.get_id()
+                ))
+                .set("Authorization",&self.get_bearer_token_string())
+                .set("X-GitHub-Api-Version", "2022-11-28")
+                .call().expect("failed to delete comment");
+            })
+        }
+        
+    }
+
 
     #[test]
     fn can_get_commits_matching_collaborators_since_timestamp() {
@@ -140,10 +201,30 @@ mod tests{
         println!("{:?}", commits);
         assert!(
             commits.contains(&Commit{
-                id: "C_kwDOKaBtAtoAKDAwMjk5NDgxMzY3Zjk5ZGY0ZDNlNGE2YWE2MzhmMWEyMjhiM2EyNmE".to_string(),
+                oid: "00299481367f99df4d3e4a6aa638f1a228b3a26a".to_string(),
                 message: "can retrieve commits based on timestamp".to_string(),
                 author: Author { user: Some(User{id: Some("MDQ6VXNlcjMxMzkxNTc5".to_string())})}
             }));
+    }
+    #[test]
+    fn can_add_comment(){
+        let commit = Commit{
+            oid: "00299481367f99df4d3e4a6aa638f1a228b3a26a".to_string(),
+            message: "can retrieve commits based on timestamp".to_string(),
+            author: Author { user: Some(User{id: Some("MDQ6VXNlcjMxMzkxNTc5".to_string())})}
+        };
+
+        dotenv().ok();
+        let github_token = env::var("github_token").expect("No environment variable found for github_token");
+        let repository = GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+
+
+        repository.post_comment_on_commit_that_you_worked_on_it(&commit);
+
+        let comments = repository.get_comments(&commit);
+        assert_eq!("I worked on this", comments.get(0).unwrap().get_body());
+        
+        repository.delete_comments(&comments);
     }
 
 }

@@ -35,8 +35,10 @@ fn main() {
     loop{
         let commits = repository.get_commits_matching_collaborators_since_timestamp(&selected_collaborators, timestamp);
         timestamp = Local::now();
-        commits.iter().for_each(|commit| println!("commit: {:?}", commit));
-        //add comment for each of these commits
+        commits.iter().for_each(|commit| {
+            println!("commit: {:?}", commit);
+            repository.post_comment_on_commit_that_you_worked_on_it(commit);
+        });
         std::thread::sleep(Duration::new(300, 0))
     }
 }
