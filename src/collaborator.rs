@@ -5,10 +5,10 @@ use serde::{Serialize, Deserialize};
 use crate::{user_input_generator::MultiSelectGeneratorTrait, repository::GitRepository};
 
 
-#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone)]
+#[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord)]
 pub struct Collaborator {
-    node_id: String,
     login: String,
+    node_id: String,
 }
 
 impl Collaborator {
@@ -36,7 +36,7 @@ impl GitRepository {
             self.get_org_name(),
             self.get_repository_name()
         );
-        match ureq::get(&url)
+        let mut collaborators = match ureq::get(&url)
         .set("Authorization",&bearer_token)
         .set("X-GitHub-Api-Version", "2022-11-28")
         .call()
@@ -44,7 +44,9 @@ impl GitRepository {
             Ok(response) => serde_json::from_str::<Vec<Collaborator>>(&response.into_string().unwrap())
                 .expect("failed to deserialize"),
             Err(error) => panic!("{}", error),
-        }
+        };
+        collaborators.sort();
+        collaborators
     }
 }
 
