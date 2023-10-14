@@ -28,9 +28,6 @@ fn main() {
     let repository = create_git_repository(&mut user_input_generator);
     let collaborators: Vec<Collaborator> = repository.get_collaborators();
     let selected_collaborators = ask_who_they_are_working_with(&mut collaborator_input_generator, collaborators);
-    print!("Pairing with: ");
-    selected_collaborators.iter().for_each(|selection| print!("{},", selection));
-    println!("");
     let mut timestamp = Local::now();
     loop{
         let commits = repository.get_commits_matching_collaborators_since_timestamp(&selected_collaborators, timestamp);
