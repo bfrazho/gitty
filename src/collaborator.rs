@@ -8,18 +8,38 @@ use crate::{user_input_generator::MultiSelectGeneratorTrait, repository::GitRepo
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord)]
 pub struct Collaborator {
     login: String,
-    node_id: String,
+    id: String,
 }
 
 impl Collaborator {
     pub fn new(node_id: String, login: String)-> Self{
-        Self{node_id, login}
+        Self{id: node_id, login}
     }
 
     pub fn get_id(&self)-> &str {
-        &self.node_id
+        &self.id
     }
 }
+
+#[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
+struct QueryResult {
+    data: Data
+}
+#[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
+struct Data {
+    repository: ThisRepository
+}
+
+#[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
+struct Node {
+    nodes: Vec<Collaborator>
+}
+
+#[derive(PartialEq, Eq, Debug, Serialize, Deserialize)]
+struct ThisRepository {
+    collaborators: Node
+}
+
 impl Display for Collaborator{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.login)
@@ -27,22 +47,36 @@ impl Display for Collaborator{
 }
 
 impl GitRepository {
+    fn build_get_collaborators_query(&self)-> String{
+        format!(r#"
+            {{"query": "query {{
+                    repository(owner: \"{org}\", name:\"{repo}\") {{
+                        collaborators{{
+                            nodes{{
+                              login,
+                              id,  
+                            }}
+                          }}
+                    }}
+                }}"
+            }}
+        "#, org=self.get_org_name(), repo=self.get_repository_name()).replace("\n", "")
+        
+    }
+
     //https://docs.github.com/en/rest/collaborators/collaborators?apiVersion=2022-11-28
     pub fn get_collaborators(&self) -> Vec<Collaborator> {
-        let bearer_token = format!("Bearer {}", self.get_token());
-        let url = format!(
-            "{}/repos/{}/{}/collaborators",
-            self.get_base_rest_url(),
-            self.get_org_name(),
-            self.get_repository_name()
-        );
-        let mut collaborators = match ureq::get(&url)
-        .set("Authorization",&bearer_token)
-        .set("X-GitHub-Api-Version", "2022-11-28")
-        .call()
+        let graphql_query = self.build_get_collaborators_query();
+
+        let mut collaborators = match ureq::post(&self.get_graphql_url())
+        .set("Authorization",&self.get_bearer_token_string())
+        .send_string(&graphql_query)
         {
-            Ok(response) => serde_json::from_str::<Vec<Collaborator>>(&response.into_string().unwrap())
-                .expect("failed to deserialize"),
+            Ok(response) => {
+                let string_response = &response.into_string().unwrap();
+                serde_json::from_str::<QueryResult>(string_response)
+                .expect("failed to deserialize").data.repository.collaborators.nodes
+            },
             Err(error) => panic!("{}", error),
         };
         collaborators.sort();
@@ -76,7 +110,7 @@ mod test{
         let github_token = env::var("github_token").expect("No environment variable found for github_token");
         assert_eq!(
             vec![Collaborator {
-                node_id: "MDQ6VXNlcjMxMzkxNTc5".to_string(),
+                id: "MDQ6VXNlcjMxMzkxNTc5".to_string(),
                 login: "bfrazho".to_string()
             }],
             GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap()).get_collaborators()

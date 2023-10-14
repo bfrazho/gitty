@@ -104,8 +104,11 @@ impl GitRepository{
             .set("Authorization",&bearer_token)
             .send_string(&graphql_query)
             {
-                Ok(response) => serde_json::from_str::<QueryResult>(&response.into_string().unwrap())
-                    .expect("failed to deserialize").data.repository.object.history.nodes,
+                Ok(response) =>  {
+                    let string_response = &response.into_string().unwrap();
+                    serde_json::from_str::<QueryResult>(string_response)
+                    .expect("failed to deserialize").data.repository.object.history.nodes
+                },
                 Err(error) => panic!("{}", error),
             };
         filter_any_commits_that_do_not_match_collaborators(commits, collaborators)
