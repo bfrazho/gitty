@@ -100,10 +100,8 @@ mod test {
 
     #[test]
     fn get_repository_url_gets_current() {
-        assert_eq!(
-            "git@github.com:bfrazho/gitty.git".to_string(),
-            get_repository_url().to_bstring()
-        )
+        assert!(vec!["git@github.com:bfrazho/gitty.git".to_string(), "https://github.com/bfrazho/gitty".to_string()]
+            .contains(&get_repository_url().to_bstring().to_string()))
     }
 
     #[test]

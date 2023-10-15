@@ -1,6 +1,7 @@
 name: Rust
 permissions:
-  actions: read
+  actions: write
+  issues: write
   repository-projects: write
   deployments: write
 on:
