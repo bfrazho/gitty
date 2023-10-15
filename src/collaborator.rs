@@ -11,7 +11,9 @@ pub struct Collaborator {
     id: String,
 }
 
+
 impl Collaborator {
+    #[allow(dead_code)]
     pub fn new(node_id: String, login: String)-> Self{
         Self{id: node_id, login}
     }
