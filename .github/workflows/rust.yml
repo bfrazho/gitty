@@ -1,5 +1,8 @@
 name: Rust
-
+permissions:
+  actions: read
+  repository-projects: write
+  deployments: write
 on:
   push:
     branches: [ main ]
