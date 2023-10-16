@@ -44,7 +44,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu
     - name: Run tests (Windows)
       if: startsWith(matrix.target, 'x86_64') && startsWith(matrix.name, 'windows')
-      run: set github_token="${{secrets.GITHUB_TOKEN}}" && cargo test --verbose --release
+      run: echo "${{secrets.GITHUB_TOKEN}}" >> $env:github_token && cargo test --verbose --release
     - name: Run tests (Unix)
       if: startsWith(matrix.target, 'x86_64') && (startsWith(matrix.name, 'ubuntu')||startsWith(matrix.name, 'macos'))
       run: github_token="${{secrets.GITHUB_TOKEN}}" cargo test --verbose --release
