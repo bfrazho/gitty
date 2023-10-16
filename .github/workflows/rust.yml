@@ -4,6 +4,7 @@ permissions:
   issues: write
   deployments: write
   contents: read
+  discussions: write
 on:
   push:
     branches: [ main ]
