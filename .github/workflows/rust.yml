@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  github_token: ${{secrets.GITHUB_TOKEN}}
 
 jobs:
   build:
@@ -42,12 +43,9 @@ jobs:
     - name: Install Dependencies
       if: ${{'aarch64-unknown-linux-gnu' == matrix.target}}
       run: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu
-    - name: Run tests (Windows)
-      if: startsWith(matrix.target, 'x86_64') && startsWith(matrix.name, 'windows')
-      run: $env::github_token="${{secrets.GITHUB_TOKEN}}" && cargo test --verbose --release
-    - name: Run tests (Unix)
-      if: startsWith(matrix.target, 'x86_64') && (startsWith(matrix.name, 'ubuntu')||startsWith(matrix.name, 'macos'))
-      run: github_token="${{secrets.GITHUB_TOKEN}}" cargo test --verbose --release
+    - name: Run tests 
+      if: startsWith(matrix.target, 'x86_64')
+      run: cargo test --verbose --release
     - name: Build Release
       run: cargo build --verbose --release --target=${{matrix.target}}
     - uses: "marvinpinto/action-automatic-releases@latest"
