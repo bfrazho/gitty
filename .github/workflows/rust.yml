@@ -44,7 +44,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu
     - name: Run tests (Windows)
       if: startsWith(matrix.target, 'x86_64') && startsWith(matrix.name, 'windows')
-      run: set github_token="${{secrets.GITHUB_TOKEN}}" cargo test --verbose --release
+      run: set github_token="${{secrets.GITHUB_TOKEN}}" && cargo test --verbose --release
     - name: Run tests (Unix)
       if: startsWith(matrix.target, 'x86_64') && (startsWith(matrix.name, 'ubuntu')||startsWith(matrix.name, 'macos'))
       run: github_token="${{secrets.GITHUB_TOKEN}}" cargo test --verbose --release
@@ -57,9 +57,6 @@ jobs:
         prerelease: false
         title: "Latest Build ${{matrix.name}}"
         files: |
-          target/${{matrix.target}}/release/solipath.exe
-          target/${{matrix.target}}/release/download_verifier.exe
-          target/${{matrix.target}}/release/solipath.so
-          target/${{matrix.target}}/release/download_verifier.so
-          target/${{matrix.target}}/release/solipath
-          target/${{matrix.target}}/release/download_verifier
+          target/${{matrix.target}}/release/gitty.exe
+          target/${{matrix.target}}/release/gitty.so
+          target/${{matrix.target}}/release/gitty
