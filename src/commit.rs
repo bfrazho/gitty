@@ -115,12 +115,12 @@ impl GitRepository{
         
     }
 
-    pub fn post_comment_on_commit_that_you_worked_on_it(&self, commit: &Commit){
+    pub fn post_comment_on_commit_that_you_approve_it(&self, commit: &Commit){
         let url = format!("{}/repos/{}/{}/commits/{}/comments", self.get_base_rest_url(), self.get_org_name(), self.get_repository_name(),commit.get_id());
         ureq::post(&url)
             .set("Authorization",&self.get_bearer_token_string())
             .set("X-GitHub-Api-Version", "2022-11-28")
-            .send_string("{\"body\": \"I worked on this\"}").unwrap();
+            .send_string("{\"body\": \"I approve this\"}").unwrap();
     }
 }
 
@@ -214,10 +214,10 @@ mod tests{
         let repository = GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
 
 
-        repository.post_comment_on_commit_that_you_worked_on_it(&commit);
+        repository.post_comment_on_commit_that_you_approve_it(&commit);
 
         let comments = repository.get_comments(&commit);
-        assert_eq!("I worked on this", comments.get(0).unwrap().get_body());
+        assert_eq!("I approve this", comments.get(0).unwrap().get_body());
         
         repository.delete_comments(&comments);
     }

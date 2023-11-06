@@ -37,7 +37,7 @@ fn main() {
         timestamp = Local::now();
         commits.iter().for_each(|commit| {
             println!("commit: {:?}", commit);
-            repository.post_comment_on_commit_that_you_worked_on_it(commit);
+            repository.post_comment_on_commit_that_you_approve_it(commit);
         });
         std::thread::sleep(Duration::new(300, 0))
     }
