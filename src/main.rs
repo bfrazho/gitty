@@ -1,5 +1,5 @@
 use std::time::Duration;
-
+use colored::{Colorize, CustomColor};
 use chrono::Local;
 use collaborator::{ask_who_they_are_working_with, Collaborator};
 use repository::{get_repository_url, GitRepository};
@@ -29,6 +29,9 @@ fn main() {
     let collaborators: Vec<Collaborator> = repository.get_collaborators();
     let selected_collaborators = ask_who_they_are_working_with(&mut collaborator_input_generator, collaborators);
     let mut timestamp = Local::now();
+
+    print_nyan_cat();
+
     loop{
         let commits = repository.get_commits_matching_collaborators_since_timestamp(&selected_collaborators, timestamp);
         timestamp = Local::now();
@@ -40,7 +43,36 @@ fn main() {
     }
 }
 
+
+fn print_nyan_cat() {
+    let purple = CustomColor::new(75,0,130);
+    println!(r#"
+{r        }▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄
+{r2      }█  ▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄  █
+{y       }█ █      ▄    ▄       █ █
+{y       }█ █   ▄        ▄▀▀▄   █ █▄▀▀▄
+{g }▄▀▀▄  █ █        ▄   █   ▀▄▄█▄▀   █
+{g }▀▄  ▀▀█ █     ▄      █            █
+{b   }▀▀▄▄█ █  ▄        █   ▄█   ▄ ▄█  █
+{b2      }█ █        ▄  █ ██ ▄  ▄  ▄ ███
+{p      }▄█  ▀▄▄▄▄▄▄▄▄▄▄▄▀▄  ▀▀▀▀▀▀▀ ▄▀
+{p2   }▄▀ ▄▀▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▀▀▀▀▀▀▀▀▀▀
+{n }   █▄▄▀  █▄▄▀        █▄▄▀ ▀▄▄█
+"#,
+r ="███████████████████████████".red(),
+r2="██████████████████████████".red(),
+y ="██████████████████████████".yellow(),
+g ="████████████████████".green(),
+b ="██████████████████████".cyan(),
+b2="██████████████████████████".cyan(),
+p ="█████████████████████████".custom_color(purple),
+p2="███████████████████████".custom_color(purple),
+n ="                    "
+);
+}
+
 #[cfg(test)]
 mod test {
 
 }
+
