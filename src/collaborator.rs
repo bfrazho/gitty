@@ -89,10 +89,10 @@ mod test{
                 node_id: "MDQ6VXNlcjMxMzkxNTc5".to_string(),
                 login: "bfrazho".to_string()
             }],
-            GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap()).get_collaborators()
+            GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap(), "".to_string()).get_collaborators()
         )
     }
-
+ 
     #[test]
     fn user_can_select_who_they_are_pairing_with() {
 

@@ -31,21 +31,34 @@ pub fn get_repository_url() -> Url {
         .to_owned()
 }
 
+pub fn get_main_branch_name() -> String {
+    let repo = gix::discover(".").unwrap();
+    repo.branch_names().into_iter()
+        .filter(|branch| branch == &"main" || branch == &"master")
+        .last().expect("could not find main or master branch").to_string()
+}
+
 pub struct GitRepository {
     token: String,
-    url: Url
+    url: Url,
+    main_branch_name: String
 }
 
 impl GitRepository{
-    pub fn new(token: String, url: Url)-> Self {
-        Self{token, url}
+    pub fn new(token: String, url: Url, main_branch_name: String)-> Self {
+        Self{token, url, main_branch_name}
     }
+    
     pub fn get_token(&self)-> &str{
         return &self.token
     }
     pub fn get_bearer_token_string(&self)-> String{
         format!("Bearer {}", self.get_token())
     }
+    pub fn get_main_branch_name(&self)-> &str {
+        return &self.main_branch_name
+    }
+    
     pub fn get_graphql_url(&self)-> String{
         let host = self.get_host();
         if host == "github.com"{
@@ -106,45 +119,54 @@ mod test {
 
     #[test]
     fn can_get_graphql_url_for_standard_git(){
-        let repository = GitRepository::new(
-            "the token".to_string(), 
-        Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+        let repository = {
+            let token = "the token".to_string();let url = Url::try_from("git@github.com:bfrazho/gitty.git").unwrap();
+            GitRepository::new(token, url, "".to_string())
+        };
         assert_eq!("https://api.github.com/graphql", repository.get_graphql_url());
     }
 
     #[test]
     fn can_get_graphql_url_for_enterprise_git(){
-        let repository = GitRepository::new(
-            "the token".to_string(), 
-        Url::try_from("git@github.some-business.com:bfrazho/gitty.git").unwrap());
+        let repository = {
+            let token = "the token".to_string();let url = Url::try_from("git@github.some-business.com:bfrazho/gitty.git").unwrap();
+            GitRepository::new(token, url, "".to_string())
+        };
         assert_eq!("https://github.some-business.com/api/graphql", repository.get_graphql_url());
     }
 
     #[test]
     fn can_get_rest_url_for_standard_git(){
-        let repository = GitRepository::new(
-            "the token".to_string(), 
-        Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+        let repository = {
+            let token = "the token".to_string();let url = Url::try_from("git@github.com:bfrazho/gitty.git").unwrap();
+            GitRepository::new(token, url, "".to_string())
+        };
         assert_eq!("https://api.github.com", repository.get_base_rest_url());
     }
 
     #[test]
     fn can_get_rest_url_for_enterprise_git(){
-        let repository = GitRepository::new(
-            "the token".to_string(), 
-        Url::try_from("git@github.some-business.com:bfrazho/gitty.git").unwrap());
+        let repository = {
+            let token = "the token".to_string();let url = Url::try_from("git@github.some-business.com:bfrazho/gitty.git").unwrap();
+            GitRepository::new(token, url, "".to_string())
+        };
         assert_eq!("https://github.some-business.com/api/v3", repository.get_base_rest_url());
     }
 
     #[test]
     fn can_create_git_repository() {
-        let repository = GitRepository::new(
-            "the token".to_string(), 
-        Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+        let repository = {
+            let token = "the token".to_string();let url = Url::try_from("git@github.com:bfrazho/gitty.git").unwrap();
+            GitRepository::new(token, url, "".to_string())
+        };
 
         assert_eq!("the token", repository.get_token());
         assert_eq!("bfrazho".to_string(), repository.get_org_name());
         assert_eq!("github.com", repository.get_host());
         assert_eq!("gitty", repository.get_repository_name());
+    }
+    #[test]
+    fn can_get_main_branch_name() {
+        assert_eq!("main", get_main_branch_name())
     }
 }

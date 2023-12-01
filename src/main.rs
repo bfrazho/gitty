@@ -6,7 +6,7 @@ use repository::{get_repository_url, GitRepository};
 use token_retriever::get_github_token_and_prompt_if_not_found;
 use user_input_generator::TextInputGeneratorTrait;
 
-use crate::{repository::RepositoryTrait, user_input_generator::{InquireTextInputGenerator, InquireMultiSelectGenerator}};
+use crate::{repository::{RepositoryTrait, get_main_branch_name}, user_input_generator::{InquireTextInputGenerator, InquireMultiSelectGenerator}};
 mod collaborator;
 mod repository;
 mod token_retriever;
@@ -16,9 +16,13 @@ mod commit;
 
 fn create_git_repository(user_input_generator: &mut dyn TextInputGeneratorTrait)-> GitRepository {
     let url = get_repository_url();
-    println!("Org: {}, Repo: {}", url.get_org_name(), url.get_repository_name());
+    let main_branch = get_main_branch_name();
+    println!("Org: {}, Repo: {}, Main branch name: {}", url.get_org_name(), url.get_repository_name(), main_branch);
     let github_token = get_github_token_and_prompt_if_not_found(user_input_generator);
-    GitRepository::new(github_token, url)
+    {
+        let token = github_token;let url = url;
+        GitRepository::new(token, url, main_branch)
+    }
 }
 
 fn main() {

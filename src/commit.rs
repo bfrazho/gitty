@@ -73,7 +73,7 @@ impl GitRepository{
         format!(r#"
             {{"query": "query {{
                     repository(owner: \"{org}\", name:\"{repo}\") {{
-                        object(expression: \"main\") {{
+                        object(expression: \"{main_branch_name}\") {{
                             ... on Commit {{
                                 history(first: 100, since: \"{timestamp}\") {{
                                     nodes {{
@@ -91,7 +91,7 @@ impl GitRepository{
                     }}
                 }}"
             }}
-        "#, org=self.get_org_name(), repo=self.get_repository_name(), timestamp=timestamp.to_rfc3339()).replace("\n", "")
+        "#, org=self.get_org_name(), repo=self.get_repository_name(), main_branch_name=self.get_main_branch_name(), timestamp=timestamp.to_rfc3339()).replace("\n", "")
         
     }
 
@@ -191,7 +191,10 @@ mod tests{
             .and_local_timezone(Local::now().timezone()).unwrap();
         let github_token = env::var("github_token").expect("No environment variable found for github_token");
         
-        let repository = GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+        let repository = {
+            let token = github_token;let url = Url::try_from("git@github.com:bfrazho/gitty.git").unwrap();
+            GitRepository::new(token, url, "main".to_string())
+        };
         let commits = repository.get_commits_matching_collaborators_since_timestamp(&collaborators, timestamp);
         println!("{:?}", commits);
         assert!(
@@ -211,7 +214,10 @@ mod tests{
 
         dotenv().ok();
         let github_token = env::var("github_token").expect("No environment variable found for github_token");
-        let repository = GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap());
+        let repository = {
+            let token = github_token;let url = Url::try_from("git@github.com:bfrazho/gitty.git").unwrap();
+            GitRepository::new(token, url, "main".to_string())
+        };
 
 
         repository.post_comment_on_commit_that_you_approve_it(&commit);
