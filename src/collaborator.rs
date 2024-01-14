@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::{Serialize, Deserialize};
 
-use crate::{user_input_generator::MultiSelectGeneratorTrait, repository::GitRepository};
+use crate::{user_input_generator::MultiSelectGeneratorTrait, repository::GitRepository, http_agent::HttpProxyAgent};
 
 
 #[derive(PartialEq, Eq, Serialize, Deserialize, Debug, Clone, PartialOrd, Ord)]
@@ -38,10 +38,10 @@ impl GitRepository {
     }
 
     //https://docs.github.com/en/rest/collaborators/collaborators?apiVersion=2022-11-28
-    pub fn get_collaborators(&self) -> Vec<Collaborator> {
+    pub fn get_collaborators(&self, http_agent: &HttpProxyAgent) -> Vec<Collaborator> {
         let collaborator_query = self.build_get_collaborators_query();
 
-        let mut collaborators = match ureq::get(&collaborator_query)
+        let mut collaborators = match http_agent.get(&collaborator_query)
         .set("Authorization",&self.get_bearer_token_string())
         .set("X-GitHub-Api-Version", "2022-11-28")
         .query("permission", "admin")
@@ -84,12 +84,13 @@ mod test{
     fn can_get_collaborators() {
         dotenv().ok();
         let github_token = env::var("github_token").expect("No environment variable found for github_token");
+        let http_agent = HttpProxyAgent::new_with_proxy("");
         assert_eq!(
             vec![Collaborator {
                 node_id: "MDQ6VXNlcjMxMzkxNTc5".to_string(),
                 login: "bfrazho".to_string()
             }],
-            GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap(), "".to_string()).get_collaborators()
+            GitRepository::new(github_token, Url::try_from("git@github.com:bfrazho/gitty.git").unwrap(), "".to_string()).get_collaborators(&http_agent)
         )
     }
  

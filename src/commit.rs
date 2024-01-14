@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use serde::{Serialize, Deserialize};
 
-use crate::{repository::GitRepository, collaborator::Collaborator};
+use crate::{repository::GitRepository, collaborator::Collaborator, http_agent::HttpProxyAgent};
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize,Clone)]
 pub struct User {
@@ -95,12 +95,12 @@ impl GitRepository{
         
     }
 
-    pub fn get_commits_matching_collaborators_since_timestamp(&self, collaborators: &Vec<Collaborator>, timestamp: DateTime<Local>)-> Vec<Commit> {
+    pub fn get_commits_matching_collaborators_since_timestamp(&self, http_agent: &HttpProxyAgent, collaborators: &Vec<Collaborator>, timestamp: DateTime<Local>)-> Vec<Commit> {
         let graphql_query = self.build_get_commits_after_timestamp_query(timestamp);
         let bearer_token = self.get_bearer_token_string();
         let url = self.get_graphql_url();
 
-        let commits = match ureq::post(&url)
+        let commits = match http_agent.post(&url)
             .set("Authorization",&bearer_token)
             .send_string(&graphql_query)
             {
@@ -115,9 +115,9 @@ impl GitRepository{
         
     }
 
-    pub fn post_comment_on_commit_that_you_approve_it(&self, commit: &Commit){
+    pub fn post_comment_on_commit_that_you_approve_it(&self, http_agent: &HttpProxyAgent, commit: &Commit){
         let url = format!("{}/repos/{}/{}/commits/{}/comments", self.get_base_rest_url(), self.get_org_name(), self.get_repository_name(),commit.get_id());
-        ureq::post(&url)
+        http_agent.post(&url)
             .set("Authorization",&self.get_bearer_token_string())
             .set("X-GitHub-Api-Version", "2022-11-28")
             .send_string("{\"body\": \"I approve this\"}").unwrap();
@@ -152,9 +152,9 @@ mod tests{
 
     impl GitRepository{
 
-        fn get_comments(&self, commit: &Commit)-> Vec<CommentResponse>{
+        fn get_comments(&self, http_agent: &HttpProxyAgent, commit: &Commit)-> Vec<CommentResponse>{
             let comments_url = format!("{}/repos/{}/{}/commits/{}/comments", self.get_base_rest_url(), self.get_org_name(), self.get_repository_name(), commit.get_id());
-            match ureq::get(&comments_url)
+            match http_agent.get(&comments_url)
             .set("Authorization",&self.get_bearer_token_string())
             .set("X-GitHub-Api-Version", "2022-11-28")
         .call()
@@ -164,9 +164,9 @@ mod tests{
                 Err(error) => panic!("{}", error),
             }
         }
-        fn delete_comments(&self, comments: &Vec<CommentResponse>){
+        fn delete_comments(&self, http_agent: &HttpProxyAgent, comments: &Vec<CommentResponse>){
             comments.iter().for_each(|comment| {
-                ureq::delete(
+                http_agent.delete(
                     &format!("{}/repos/{}/{}/comments/{}", 
                     &self.get_base_rest_url(), 
                     self.get_org_name(), 
@@ -190,12 +190,12 @@ mod tests{
             .and_hms_opt(0, 0, 0).unwrap()
             .and_local_timezone(Local::now().timezone()).unwrap();
         let github_token = env::var("github_token").expect("No environment variable found for github_token");
-        
+        let http_agent = HttpProxyAgent::new_with_proxy("");
         let repository = {
             let token = github_token;let url = Url::try_from("git@github.com:bfrazho/gitty.git").unwrap();
             GitRepository::new(token, url, "main".to_string())
         };
-        let commits = repository.get_commits_matching_collaborators_since_timestamp(&collaborators, timestamp);
+        let commits = repository.get_commits_matching_collaborators_since_timestamp(&http_agent, &collaborators, timestamp);
         println!("{:?}", commits);
         assert!(
             commits.contains(&Commit{
@@ -218,14 +218,14 @@ mod tests{
             let token = github_token;let url = Url::try_from("git@github.com:bfrazho/gitty.git").unwrap();
             GitRepository::new(token, url, "main".to_string())
         };
+        let http_agent = HttpProxyAgent::new_with_proxy("");
 
+        repository.post_comment_on_commit_that_you_approve_it(&http_agent, &commit);
 
-        repository.post_comment_on_commit_that_you_approve_it(&commit);
-
-        let comments = repository.get_comments(&commit);
+        let comments = repository.get_comments(&http_agent, &commit);
         assert_eq!("I approve this", comments.get(0).unwrap().get_body());
         
-        repository.delete_comments(&comments);
+        repository.delete_comments(&http_agent, &comments);
     }
 
 }
