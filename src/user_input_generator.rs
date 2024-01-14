@@ -3,6 +3,7 @@ use std::fmt::Display;
 use inquire::MultiSelect;
 
 pub trait TextInputGeneratorTrait {
+    fn get_password_input(&mut self, prompt: &str) -> Option<String>;
     fn get_text_input(&mut self, prompt: &str) -> Option<String>;
 }
 
@@ -18,8 +19,14 @@ impl InquireTextInputGenerator{
     }
 }
 impl TextInputGeneratorTrait for InquireTextInputGenerator{
-    fn get_text_input(&mut self, prompt: &str) -> Option<String> {
+    fn get_password_input(&mut self, prompt: &str) -> Option<String> {
         match inquire::Password::new(prompt.into()).without_confirmation().prompt(){
+            Ok(result) => Some(result),
+            Err(_) => None, 
+        }
+    }
+    fn get_text_input(&mut self, prompt: &str) -> Option<String> {
+        match inquire::Text::new(prompt.into()).prompt(){
             Ok(result) => Some(result),
             Err(_) => None, 
         }
@@ -67,6 +74,9 @@ impl MockTextInputGenerator {
 }
 
 impl TextInputGeneratorTrait for MockTextInputGenerator {
+    fn get_password_input(&mut self, _: &str) -> Option<String> {
+        self.text_inputs.pop()
+    }
     fn get_text_input(&mut self, _: &str) -> Option<String> {
         self.text_inputs.pop()
     }
@@ -114,20 +124,20 @@ mod test {
     fn can_get_text_inputs() {
         let mut input_generator =
             MockTextInputGenerator::new(vec!["input 1".to_string()]);
-        assert_eq!("input 1", input_generator.get_text_input("the prompt").unwrap())
+        assert_eq!("input 1", input_generator.get_password_input("the prompt").unwrap())
     }
     #[test]
     fn can_get_text_inputs_multiple() {
         let mut input_generator =
             MockTextInputGenerator::new(vec!["input 1".to_string(), "input 2".to_string()]);
-        input_generator.get_text_input("prompt");
-        assert_eq!("input 2", input_generator.get_text_input("the prompt").unwrap())
+        input_generator.get_password_input("prompt");
+        assert_eq!("input 2", input_generator.get_password_input("the prompt").unwrap())
     }
     #[test]
     fn can_return_none_when_no_text_inputs_exist() {
         let mut input_generator =
             MockTextInputGenerator::new(Vec::new());
-        assert_eq!(None, input_generator.get_text_input("the prompt"))
+        assert_eq!(None, input_generator.get_password_input("the prompt"))
     }
     
 

@@ -20,7 +20,7 @@ pub fn get_github_token_and_prompt_if_not_found(
         Ok(github_token) => github_token,
         Err(_) => {
             let github_token = user_input_generator
-                .get_text_input("Please enter your github token")
+                .get_password_input("Please enter your github token")
                 .unwrap();
             fs::write(path_to_github_token, github_token.clone()).expect("failed to write token to file");
             github_token
